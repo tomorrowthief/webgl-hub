@@ -1,0 +1,5 @@
+{
+  "name": "WebGL Learning Hub",
+  "description": "An interactive platform to learn WebGL through practical examples. Browse a curated list of tutorials, view detailed explanations, and explore the corresponding code snippets to master modern web graphics.",
+  "requestFramePermissions": []
+}
