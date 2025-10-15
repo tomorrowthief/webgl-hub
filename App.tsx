@@ -8,7 +8,7 @@ import Layout from './components/Layout';
 const App: React.FC = () => {
   return (
     <HashRouter>
-      <Layout>
+      <Layout isNextJs={false}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/example/:id" element={<DetailPage />} />

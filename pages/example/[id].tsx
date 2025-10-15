@@ -1,17 +1,17 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { GetStaticProps, GetStaticPaths, NextPage } from 'next';
-import { WEBGL_EXAMPLES } from '../../constants';
 import CodeEditor from '../../components/CodeEditor';
 import { WebGLExample } from '../../types';
+import { translations } from '../../lib/translations';
 
 interface DetailPageProps {
   example: WebGLExample;
+  common: typeof translations['en']['common'];
 }
 
-const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
+const DetailPage: NextPage<DetailPageProps> = ({ example, common }) => {
   const [jsCode, setJsCode] = useState('');
   const [vertexCode, setVertexCode] = useState('');
   const [fragmentCode, setFragmentCode] = useState('');
@@ -88,7 +88,7 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
   }, [example]);
 
   useEffect(() => {
-    if(jsCode) {
+    if(jsCode || vertexCode || fragmentCode) {
        const timer = setTimeout(() => handleRunCode(), 100);
        return () => clearTimeout(timer);
     }
@@ -100,9 +100,9 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
         <Head>
             <title>Example Not Found - WebGL Hub</title>
         </Head>
-        <h2 className="text-2xl font-bold text-red-500">Example not found!</h2>
+        <h2 className="text-2xl font-bold text-red-500">{common.exampleNotFound}</h2>
         <Link href="/" className="mt-4 inline-block text-teal-400 hover:text-teal-300">
-          &larr; Back to Home
+          {common.backToHome}
         </Link>
       </div>
     );
@@ -121,7 +121,7 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Back to Examples
+        {common.backToExamples}
       </Link>
 
       <h1 className="text-4xl font-extrabold text-white mb-8">{example.title}</h1>
@@ -133,7 +133,7 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
             </div>
             {error && (
                 <div className="p-4 bg-red-900/50 text-red-300 rounded-md font-mono text-sm shadow-inner" role="alert">
-                    <p className="font-bold mb-1">Execution Error:</p>
+                    <p className="font-bold mb-1">{common.executionError}</p>
                     <p>{error}</p>
                 </div>
             )}
@@ -141,7 +141,7 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
 
         <div className={`flex flex-col space-y-4 ${isThreeJs ? 'lg:aspect-square' : ''}`}>
             <CodeEditor 
-                language="JavaScript" 
+                language={common.codeEditorTitles.javascript}
                 value={jsCode} 
                 onChange={setJsCode} 
                 height={isThreeJs ? 'h-96 lg:h-full' : 'h-64'}
@@ -153,21 +153,21 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                         </svg>
-                        Run
+                        {common.run}
                     </button>
                 }
             />
             {vertexCode && (
-              <CodeEditor language="Vertex Shader (GLSL)" value={vertexCode} onChange={setVertexCode} />
+              <CodeEditor language={common.codeEditorTitles.vertexShader} value={vertexCode} onChange={setVertexCode} />
             )}
             {fragmentCode && (
-              <CodeEditor language="Fragment Shader (GLSL)" value={fragmentCode} onChange={setFragmentCode} />
+              <CodeEditor language={common.codeEditorTitles.fragmentShader} value={fragmentCode} onChange={setFragmentCode} />
             )}
         </div>
       </div>
 
       <div className="bg-navy-900/50 p-6 rounded-lg">
-         <h2 className="text-2xl font-bold text-white mb-3">Description</h2>
+         <h2 className="text-2xl font-bold text-white mb-3">{common.description}</h2>
         <p className="text-lg text-navy-300 leading-relaxed">
             {example.description}
         </p>
@@ -178,17 +178,26 @@ const DetailPage: NextPage<DetailPageProps> = ({ example }) => {
   );
 };
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const paths = WEBGL_EXAMPLES.map(example => ({
-    params: { id: example.id },
-  }));
+export const getStaticPaths: GetStaticPaths = async ({ locales }) => {
+  const paths: any[] = [];
+  const englishExamples = translations['en'].examples;
+
+  locales!.forEach(locale => {
+    englishExamples.forEach(example => {
+      paths.push({ params: { id: example.id }, locale });
+    });
+  });
+
   return { paths, fallback: false };
 };
 
 export const getStaticProps: GetStaticProps = async (context) => {
   const { id } = context.params!;
-  const example = WEBGL_EXAMPLES.find(ex => ex.id === id as string);
-  return { props: { example: example || null } };
+  const locale = context.locale!;
+  const content = translations[locale];
+  const example = content.examples.find(ex => ex.id === id as string);
+  
+  return { props: { example: example || null, common: content.common } };
 };
 
 export default DetailPage;
